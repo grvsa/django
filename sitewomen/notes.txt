@@ -18,3 +18,39 @@ python manage.py startapp women
 
 ## после создания приложения его все равно нужно зарегистрировать внутри проекта вручную
 ## папка <sitewomen> файл settings.py список INSTALLED_APPS
+
+## 1.6 ---------------- динамические url на примере категорий
+    http://127.0.0.1:8000/cats/
+    path('cats/', views.categories) - заменяется на
+    path('cats/<int:cat_id>/', views.categories), где cat_id динамический url (int конвертер типа)
+    http://127.0.0.1:8000/cats/1/ etc
+    В данном случае в конце обязателен "/"
+
+    views.py так же необходимо изменить
+    def categories(request, cat_id):
+        return HttpResponse(f'<h1>Categories page</h1><p>{cat_id}</p>')
+
+    типы основных конвертеров: docs.djangoproject.com/en/4.2/topics/http/urls/
+
+    Path converters¶
+The following path converters are available by default:
+
+str - Matches any non-empty string, excluding the path separator, '/'. This is the default if a converter isn’t included in the expression.
+int - Matches zero or any positive integer. Returns an int.
+slug - Matches any slug string consisting of ASCII letters or numbers, plus the hyphen and underscore characters. For example, building-your-1st-django-site.
+uuid - Matches a formatted UUID. To prevent multiple URLs from mapping to the same page, dashes must be included and letters must be lowercase. For example, 075194d3-6885-417e-a8a8-6c931e272f00. Returns a UUID instance.
+path - Matches any non-empty string, including the path separator, '/'. This allows you to match against a complete URL path rather than a segment of a URL path as with str.
+
+
+    urlpatterns = [
+    ##    path('cats/', views.categories),
+        path('cats/<int:cat_id>/', views.categories),
+        path('cats/<slug:cat_slug>/', views.categories_by_slug),
+        path('', views.index),
+    ]
+
+    def categories_by_slug(request, cat_slug):
+        return HttpResponse(f'<h1>Categories page</h1><p>slug: {cat_slug}</p>')
+
+## В данном случае джанго проверяет маршруты сверху вниз - поэтому http://127.0.0.1:8000/cats/1/
+отрабатывает как int !
