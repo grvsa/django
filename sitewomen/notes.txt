@@ -54,3 +54,89 @@ path - Matches any non-empty string, including the path separator, '/'. This all
 
 ## В данном случае джанго проверяет маршруты сверху вниз - поэтому http://127.0.0.1:8000/cats/1/
 отрабатывает как int !
+
+## 1.7 GET POST запросы в URL + Exceptions
+def categories_by_slug(request, cat_slug):
+    if request.GET:
+        print(request.GET)
+    else:
+        print('GET EMPTY')
+
+    if request.POST:
+        print(request.POST)
+    else:
+        print('POST EMPTY')
+
+# выводит словарь QueryDict для GET и POST запросов
+
+# файл проекта settings.py значение
+DEBUG = True
+Выводит подробную информацию по возникшему исключению
+когда будет
+DEBUG = False
+просто будет ошибка CommandError: You must set settings.ALLOWED_HOSTS if DEBUG is False.
+там же в ALLOWED_HOSTS надо прописать наш адрес
+
+Тогда будет вываливаться нормальная ошибка Not Found
+
+# заменяем на свой хэндлер
+sitewomen/urls.py
+
+from women.views import page_not_found
+handler404 = page_not_found
+
+обработчик будет в приложении women
+
+women/views.py
+from django.http import HttpResponse, HttpResponseNotFound
+def page_not_found(request, exception):
+    return HttpResponseNotFound(f'<h1>Requested page is not found</h1><p>Try to change URL adress</p>')
+
+Обязательно возвращаем корректный HttpResponse в нашем случае HttpResponseNotFound
+в этом случае код возвращенной страницы будет 404
+[10/Sep/2024 13:12:07] "GET /11 HTTP/1.1" 404 67
+
+исключение можно генерить и из функций представления как результат проверки условий к примеру.
+В этом случае все равно сработает установленый обработчик
+
+# 1.8 redirect pages
+301 страница перемещена на другой постоянный url
+302 страница перемещена временно на другой url
+
+women/views.py
+from django.shortcuts import render, redirect
+
+def archive(request, year):
+    if year > 2024:
+
+        # raise Http404()
+        return redirect('/') #на адрес главной страницы
+
+    return HttpResponse(f'<h1>Categories page</h1><p>archive year: {year}</p>')
+
+код страницы [10/Sep/2024 14:26:51] "GET /archive/2025/ HTTP/1.1" 302 0
+по умолчанию redirect делает перенаправление на временную страницу
+
+def archive(request, year):
+    if year > 2024:
+
+        # raise Http404()
+        # return redirect('/') #на адрес главной страницы с кодом 302 - временно
+        return redirect('/', permanent=True) # на адрес главной страницы с кодом 301 - постоянно
+    return HttpResponse(f'<h1>Categories page</h1><p>archive year: {year}</p>')
+
+предпочтительный вариант
+women/urls.py
+    urlpatterns = [
+        path('cats/<int:cat_id>/', views.categories),
+        path('cats/<slug:cat_slug>/', views.categories_by_slug),
+        path('', views.index, name='home'), #задали обозначение страницы !
+        path('archive/<year4:year>/', views.archive)
+    ]
+def archive(request, year):
+    if year > 2024:
+        return redirect('home') #по имени страницы
+    return HttpResponse(f'<h1>Categories page</h1><p>archive year: {year}</p>')
+Этот вариант позволяет избежать хардкодинга.
+К примеру может изменить функция представления либо страница переехать на другой url
+
